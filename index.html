@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Depth of Ash — 3D Prototype</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/vendor/three.min.js"></script>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div id="crosshair"></div>
+<div id="hud">
+  <div class="hudTop">
+    <div class="panel" id="statsPanel">
+      <div class="row"><span>HP</span><b id="hpText">-</b></div>
+      <div class="barOuter"><div class="barInner" id="hpBar" style="width:100%"></div></div>
+      <div class="row"><span>XP</span><b id="xpText">-</b></div>
+      <div class="barOuter"><div class="xpInner" id="xpBar" style="width:0%"></div></div>
+      <div class="row"><span>Level</span><b id="lvlText">1</b></div>
+      <div class="row"><span>Gold</span><b id="goldText">0</b></div>
+      <div class="row"><span>Depth</span><b id="depthText">Hearth</b></div>
+    </div>
+    <div class="panel" id="logPanel"></div>
+  </div>
+  <div id="abilityBar"></div>
+</div>
+<div id="fadeOverlay"></div>
+<div id="lockHint">Click to look around · WASD move · F/Q/E/R or Left-click for abilities · I: inventory</div>
+<div id="interactHint"></div>
+<button id="resetSaveBtn" title="Erase saved progress and start a new wanderer">Reset Progress</button>
+
+<div id="classModal" class="modalOverlay show">
+  <div class="modalBox">
+    <h2>CHOOSE YOUR WANDERER</h2>
+    <p class="sub">Pick a class to descend into the Ash below.</p>
+    <div class="classGrid" id="classGrid"></div>
+  </div>
+</div>
+
+<div id="shopModal" class="modalOverlay">
+  <div class="modalBox">
+    <h2>Old Marrow's Wares</h2>
+    <p class="sub">Gold: <b id="shopGoldText">0</b></p>
+    <div class="tabRow">
+      <button class="tabBtn tabActive" id="shopTabBuy">Buy</button>
+      <button class="tabBtn" id="shopTabSell">Sell</button>
+    </div>
+    <div id="shopList"></div>
+    <button class="modalClose" id="shopCloseBtn">Leave Shop (Esc)</button>
+  </div>
+</div>
+
+<div id="inventoryModal" class="modalOverlay">
+  <div class="modalBox">
+    <h2>Pack &amp; Equipment</h2>
+    <div id="invEquipped"></div>
+    <div id="invList"></div>
+    <button class="modalClose" id="invCloseBtn">Close (I)</button>
+  </div>
+</div>
+
+<script src="js/core.js"></script>
+<script src="js/save.js"></script>
+<script src="js/data.js"></script>
+<script src="js/world-gen.js"></script>
+<script src="js/level.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/player.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
