@@ -64,7 +64,7 @@ function generateDungeonData(seedStr, depthN){
   const W=26, H=26;
   const grid = makeGrid(W,H,0);
   const root = {x:1,y:1,w:W-2,h:H-2};
-  splitBSP(root, rng, 5, 4);
+  splitBSP(root, rng, 4, 5);
   const rooms = [];
   buildRooms(root, rng, grid, rooms);
   const entrance = rooms[0];
@@ -76,7 +76,7 @@ function generateDungeonData(seedStr, depthN){
   const monsters = [];
   const spawnX = Math.floor(entrance.x+entrance.w/2), spawnZ = Math.floor(entrance.y+entrance.h/2);
   for (const room of normalRooms){
-    const count = randInt(rng,1,3);
+    const count = randInt(rng,2,4) + Math.floor((room.w*room.h)/45);
     for (let i=0;i<count;i++){
       const mx = room.x + randInt(rng,0,room.w-1), mz = room.y + randInt(rng,0,room.h-1);
       if (mx===spawnX && mz===spawnZ) continue;
@@ -130,6 +130,11 @@ function makeMonsterSpriteTexture(typeId, color){
   const tri = (x1,y1,x2,y2,x3,y3)=>{ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.lineTo(x3,y3); ctx.closePath(); ctx.fill(); ctx.stroke(); };
   const rrect = (x,y,w,h,r)=>{ roundRectPath(ctx,x,y,w,h,r); ctx.fill(); ctx.stroke(); };
 
+  // Each drawing below was authored with some empty margin under its feet; shift it down
+  // so the art actually touches the bottom of the canvas (else the sprite appears to float).
+  const FOOT_SHIFT = {rat:9, goblin:12, skeleton:16, orc:12, wraith:8, warden:12};
+  ctx.save();
+  ctx.translate(0, FOOT_SHIFT[typeId]!==undefined ? FOOT_SHIFT[typeId] : 16);
   switch(typeId){
     case 'rat':
       blob(cx-2, 58, 22, 13);
@@ -191,6 +196,7 @@ function makeMonsterSpriteTexture(typeId, color){
       rrect(cx-10, 40, 20, 24, 4);
       blob(cx, 30, 11, 11);
   }
+  ctx.restore();
   const tex = new THREE.CanvasTexture(c);
   tex.magFilter = THREE.NearestFilter;
   MONSTER_SPRITE_CACHE[typeId] = tex;
