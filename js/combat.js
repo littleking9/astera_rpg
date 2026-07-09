@@ -216,6 +216,7 @@ function useAbility(slot){
   const endKey = slot==='F'?'fCdEnd':slot==='Q'?'qCdEnd':slot==='E'?'eCdEnd':'rCdEnd';
   if (now < player[endKey]) return;
   player[endKey] = now + cls.cd[slot];
+  triggerSwing();
   ABILITY_FN[cls.id][slot]();
 }
 

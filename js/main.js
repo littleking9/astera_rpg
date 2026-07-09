@@ -65,6 +65,7 @@ function animate(now){
     camera.position.set(player.x, EYE_H, player.z);
     camera.rotation.y = player.yaw;
     camera.rotation.x = player.pitch;
+    updateViewmodelMotion(dt);
     updateHud();
   }
   renderer.render(scene, camera);

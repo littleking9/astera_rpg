@@ -1,4 +1,8 @@
 /* Player movement, scene transitions (Hearth <-> dungeon), and input handling. */
+function isPlayerMoving(){
+  return !uiOpen && (keysDown.has('w')||keysDown.has('s')||keysDown.has('a')||keysDown.has('d')||
+    keysDown.has('ArrowUp')||keysDown.has('ArrowDown')||keysDown.has('ArrowLeft')||keysDown.has('ArrowRight'));
+}
 function updatePlayerMovement(dt){
   let ix=0, iz=0;
   if (keysDown.has('w')||keysDown.has('ArrowUp')) iz -= 1;

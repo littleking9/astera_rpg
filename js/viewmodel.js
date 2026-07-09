@@ -61,3 +61,52 @@ function updateViewModel(){
   while (viewModelGroup.children.length) viewModelGroup.remove(viewModelGroup.children[0]);
   viewModelGroup.add(buildWeaponMesh(player.equipment.weapon));
 }
+
+/* ---- Motion feel: head-bob, weapon sway/inertia, and attack swing ----
+   Without this the view reads as a disembodied "creative mode" camera:
+   a perfectly smooth glide with a static item nailed in front of it. */
+const VM_BASE_POS = {x:0.32, y:-0.32, z:-0.55};
+const VM_BASE_ROT = {x:0, y:0.15, z:0.05};
+let bobT = 0, idleT = 0, swingT = 1;
+let swayYaw = 0, swayPitch = 0;
+let lastYaw = player.yaw, lastPitch = player.pitch;
+
+function triggerSwing(){ swingT = 0; }
+
+function updateViewmodelMotion(dt){
+  idleT += dt;
+  const moving = isPlayerMoving();
+  if (moving) bobT += dt; else bobT *= 0.9;
+
+  const bobFreq = 9;
+  const headBobY = moving ? Math.abs(Math.sin(bobT*bobFreq)) * 0.045 : 0;
+  const headBobX = moving ? Math.sin(bobT*bobFreq*0.5) * 0.02 : 0;
+  camera.position.y += headBobY;
+  const right = getRight();
+  camera.position.x += right.x*headBobX;
+  camera.position.z += right.z*headBobX;
+  camera.rotation.z = moving ? Math.sin(bobT*bobFreq*0.5)*0.012 : camera.rotation.z*0.85;
+
+  const yawDelta = player.yaw-lastYaw, pitchDelta = player.pitch-lastPitch;
+  lastYaw = player.yaw; lastPitch = player.pitch;
+  swayYaw = clamp((swayYaw - yawDelta*1.6)*0.88, -0.14, 0.14);
+  swayPitch = clamp((swayPitch - pitchDelta*1.6)*0.88, -0.12, 0.12);
+
+  if (swingT < 1) swingT = Math.min(1, swingT + dt*6);
+  const swingArc = swingT<1 ? Math.sin(swingT*Math.PI) : 0;
+
+  const wBobY = moving ? -Math.abs(Math.sin(bobT*bobFreq)) * 0.03 : 0;
+  const wBobX = moving ? Math.sin(bobT*bobFreq*0.5) * 0.02 : 0;
+  const idleSway = Math.sin(idleT*1.3) * 0.01;
+
+  viewModelGroup.position.set(
+    VM_BASE_POS.x + wBobX,
+    VM_BASE_POS.y + wBobY + idleSway - swingArc*0.1,
+    VM_BASE_POS.z - swingArc*0.14
+  );
+  viewModelGroup.rotation.set(
+    VM_BASE_ROT.x - swingArc*0.65,
+    VM_BASE_ROT.y + swayYaw,
+    VM_BASE_ROT.z + swayPitch
+  );
+}
