@@ -28,6 +28,7 @@ function equipItem(item){
   player.inventory = player.inventory.filter(i=>i.uid!==item.uid);
   if (prev) player.inventory.push(prev);
   recomputeMaxHp();
+  updateViewModel();
   log('Equipped '+item.name+'.', rarityCss(item.rarity));
   saveGame();
 }
@@ -37,6 +38,7 @@ function unequipItem(slot){
   player.equipment[slot] = null;
   player.inventory.push(item);
   recomputeMaxHp();
+  updateViewModel();
   log('Unequipped '+item.name+'.', 'var(--muted)');
   saveGame();
 }
@@ -69,10 +71,10 @@ function updatePickups(dt){
 /* ---- Damage resolution ---- */
 function flashHit(m){
   const mesh = level.monsterMeshes && level.monsterMeshes.get(m.uid);
-  if (!mesh) return;
-  mesh.userData.mat.emissive = new THREE.Color(0xffffff);
-  mesh.userData.mat.emissiveIntensity = 0.8;
-  setTimeout(()=>{ if (mesh.userData.mat) mesh.userData.mat.emissiveIntensity = 0; }, 100);
+  if (!mesh || !mesh.userData.baseScale) return;
+  const base = mesh.userData.baseScale;
+  mesh.scale.set(base.x*1.25, base.y*1.25, 1);
+  setTimeout(()=>{ mesh.scale.set(base.x, base.y, 1); }, 100);
 }
 function dealDamageToMonster(m, dmg){
   if (!m.alive) return;
@@ -243,6 +245,6 @@ function updateMonsters(dt){
         if (player.hp<=0) playerDied();
       }
     }
-    if (mesh) mesh.position.set(m.x,0,m.z);
+    if (mesh) mesh.position.set(m.x, mesh.position.y, m.z);
   }
 }

@@ -8,12 +8,15 @@ function startGame(cls){
   player.yaw = 0; player.pitch = 0;
   document.getElementById('depthText').textContent = 'Hearth';
 }
+const STARTER_WEAPON = {wizard:'staff', berserker:'axe', swordsman:'blade', ranger:'bow'};
 function chooseClass(id){
   const cls = CLASSES[id];
   player.classId = id;
   player.maxHp = cls.hp; player.hp = cls.hp;
   player.speed = cls.speed; player.dmgMult = cls.dmgMult;
+  player.equipment.weapon = makeStarterWeapon(STARTER_WEAPON[id]);
   startGame(cls);
+  updateViewModel();
   log('You awaken in the Hearth as a '+cls.name+'. Walk into the violet ring to descend.', 'var(--muted)');
   canvas.requestPointerLock().catch(()=>{});
   saveGame();
@@ -30,6 +33,7 @@ function loadSavedGame(saved){
   recomputeMaxHp();
   player.hp = player.maxHp;
   startGame(cls);
+  updateViewModel();
   log('Welcome back, '+cls.name+'. Your gear and gold are as you left them.', 'var(--muted)');
 }
 function populateClassModal(){

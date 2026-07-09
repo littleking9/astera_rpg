@@ -3,7 +3,7 @@ function updateHpBars(){
   for (const hb of hpBars){
     const m = hb.monster;
     if (!m.alive) continue;
-    const yOff = (m.barY||1.9)*m.scaleV;
+    const yOff = m.barY||1.9;
     hb.bg.position.set(m.x, yOff, m.z);
     hb.fg.position.set(m.x, yOff, m.z);
     hb.bg.quaternion.copy(camera.quaternion);

@@ -60,13 +60,13 @@ const CLASSES = {
 
 /* ---- Monsters ---- */
 const MONSTER_TYPES = [
-  {id:'rat',name:'Cave Rat',hp:9,dmg:2,xp:5,speed:2.6,scale:0.65,color:0x8b7355,tier:'trash',barY:0.55},
-  {id:'goblin',name:'Goblin',hp:16,dmg:4,xp:8,speed:2.3,scale:0.85,color:0x4ade80,tier:'trash',barY:1.55},
-  {id:'skeleton',name:'Skeleton',hp:24,dmg:6,xp:14,speed:2.0,scale:1.0,color:0xe5e7eb,tier:'normal',barY:1.35},
-  {id:'orc',name:'Orc Brute',hp:38,dmg:9,xp:22,speed:1.7,scale:1.25,color:0xf97316,tier:'normal',barY:1.9},
-  {id:'wraith',name:'Wraith',hp:30,dmg:11,xp:32,speed:2.9,scale:1.0,color:0xa78bfa,tier:'elite',barY:1.6},
+  {id:'rat',name:'Cave Rat',hp:9,dmg:2,xp:5,speed:2.6,spriteH:0.5,color:0x8b7355,tier:'trash',barY:0.65},
+  {id:'goblin',name:'Goblin',hp:16,dmg:4,xp:8,speed:2.3,spriteH:1.5,color:0x4ade80,tier:'trash',barY:1.7},
+  {id:'skeleton',name:'Skeleton',hp:24,dmg:6,xp:14,speed:2.0,spriteH:1.55,color:0xe5e7eb,tier:'normal',barY:1.75},
+  {id:'orc',name:'Orc Brute',hp:38,dmg:9,xp:22,speed:1.7,spriteH:2.1,color:0xf97316,tier:'normal',barY:2.3},
+  {id:'wraith',name:'Wraith',hp:30,dmg:11,xp:32,speed:2.9,spriteH:1.8,color:0xa78bfa,tier:'elite',barY:2.0},
 ];
-const BOSS_TYPE = {id:'warden',name:'The Ash Warden',hp:150,dmg:15,xp:150,speed:1.9,scale:2.0,color:0xf43f5e,tier:'boss',barY:2.7};
+const BOSS_TYPE = {id:'warden',name:'The Ash Warden',hp:150,dmg:15,xp:150,speed:1.9,spriteH:2.7,color:0xf43f5e,tier:'boss',barY:2.95};
 
 const BIOMES = [
   {name:'Candy Crypt', floor:0x6a4bc9, wall:0x2f1c5c, ceil:0x1c1140},
@@ -152,6 +152,13 @@ function rollDrop(rng, tier, depthN){
   if (rarityKey==='nothing') return null;
   const slots = ['weapon','armor','accessory'];
   return generateItem(rng, slots[randInt(rng,0,2)], rarityKey, depthN);
+}
+function makeStarterWeapon(baseId){
+  const base = ITEM_BASES.weapon.find(b=>b.id===baseId) || ITEM_BASES.weapon[0];
+  return {
+    uid:itemUid++, slot:'weapon', baseId:base.id, name:base.name, icon:base.icon,
+    rarity:'common', primaryStat:base.primaryStat, primaryValue:base.baseRange[0], affixes:[],
+  };
 }
 function getSellPrice(item){ return Math.round((SHOP_PRICE_BASE[item.rarity]||SHOP_PRICE_BASE.common) * 0.4); }
 function statSummary(item){

@@ -52,7 +52,7 @@ function roomDist(a,b){ const cx1=a.x+a.w/2,cy1=a.y+a.h/2,cx2=b.x+b.w/2,cy2=b.y+
 function makeMonsterData(type,gx,gz,depthN,isBoss){
   const scaleUp = 1+depthN*0.18;
   return {
-    uid:itemUid++, typeId:type.id, name:type.name, color:type.color, scaleV:type.scale, tier:type.tier, barY:type.barY,
+    uid:itemUid++, typeId:type.id, name:type.name, color:type.color, spriteH:type.spriteH, tier:type.tier, barY:type.barY,
     x:(gx+0.5)*CELL, z:(gz+0.5)*CELL, speed:type.speed,
     hp:Math.round(type.hp*scaleUp), maxHp:Math.round(type.hp*scaleUp),
     dmg:Math.round(type.dmg*scaleUp), xp:Math.round(type.xp*(1+depthN*0.12)),
@@ -98,118 +98,114 @@ function generateDungeonData(seedStr, depthN){
   };
 }
 
-/* ---- Monster 3D models: one distinct procedural build per type ---- */
-function makeMonsterMesh(m){
-  const s = m.scaleV;
-  const group = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({color:m.color});
-  const accent = new THREE.MeshStandardMaterial({color:0x1a0f2b});
-  const parts = [];
-  switch(m.typeId){
-    case 'rat': {
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.7*s,0.32*s,0.9*s), mat);
-      body.position.y = 0.22*s;
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.2*s,8,8), mat);
-      head.position.set(0,0.3*s,0.5*s);
-      const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.025*s,0.06*s,0.55*s,6), mat);
-      tail.rotation.x = Math.PI/2.3; tail.position.set(0,0.16*s,-0.55*s);
-      const earGeo = new THREE.ConeGeometry(0.08*s,0.14*s,6);
-      const earL = new THREE.Mesh(earGeo, mat); earL.position.set(-0.11*s,0.42*s,0.55*s);
-      const earR = new THREE.Mesh(earGeo, mat); earR.position.set(0.11*s,0.42*s,0.55*s);
-      parts.push(body,head,tail,earL,earR);
+/* ---- Monster sprites: billboarded 2D icons, one canvas texture per type (cached) ---- */
+const MONSTER_SPRITE_CACHE = {};
+function shadeHex(color, amt){
+  const r = clamp(((color>>16)&255) * (1+amt), 0, 255);
+  const g = clamp(((color>>8)&255) * (1+amt), 0, 255);
+  const b = clamp((color&255) * (1+amt), 0, 255);
+  return 'rgb('+Math.round(r)+','+Math.round(g)+','+Math.round(b)+')';
+}
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function makeMonsterSpriteTexture(typeId, color){
+  if (MONSTER_SPRITE_CACHE[typeId]) return MONSTER_SPRITE_CACHE[typeId];
+  const W=64, H=80;
+  const c = document.createElement('canvas'); c.width=W; c.height=H;
+  const ctx = c.getContext('2d');
+  const hex = '#'+color.toString(16).padStart(6,'0');
+  const dark = shadeHex(color,-0.55);
+  const cx = W/2;
+  ctx.lineJoin = 'round';
+  ctx.fillStyle = hex; ctx.strokeStyle = dark; ctx.lineWidth = 3;
+
+  const blob = (x,y,rx,ry)=>{ ctx.beginPath(); ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2); ctx.fill(); ctx.stroke(); };
+  const tri = (x1,y1,x2,y2,x3,y3)=>{ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.lineTo(x3,y3); ctx.closePath(); ctx.fill(); ctx.stroke(); };
+  const rrect = (x,y,w,h,r)=>{ roundRectPath(ctx,x,y,w,h,r); ctx.fill(); ctx.stroke(); };
+
+  switch(typeId){
+    case 'rat':
+      blob(cx-2, 58, 22, 13);
+      blob(cx+18, 48, 10, 9);
+      tri(cx+11,40, cx+16,27, cx+21,39);
+      tri(cx+21,41, cx+28,31, cx+30,41);
+      ctx.beginPath(); ctx.moveTo(cx-22,55); ctx.quadraticCurveTo(cx-38,60,cx-32,71); ctx.stroke();
+      ctx.fillStyle = dark; ctx.beginPath(); ctx.arc(cx+21,47,1.8,0,Math.PI*2); ctx.fill();
       break;
-    }
-    case 'goblin': {
-      const legs = new THREE.Mesh(new THREE.BoxGeometry(0.5*s,0.55*s,0.35*s), mat);
-      legs.position.y = 0.28*s;
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.55*s,0.6*s,0.35*s), mat);
-      torso.position.y = 0.85*s;
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.24*s,8,8), mat);
-      head.position.y = 1.28*s;
-      const earGeo = new THREE.ConeGeometry(0.09*s,0.22*s,6);
-      const earL = new THREE.Mesh(earGeo, mat); earL.rotation.z=0.5; earL.position.set(-0.24*s,1.34*s,0);
-      const earR = new THREE.Mesh(earGeo, mat); earR.rotation.z=-0.5; earR.position.set(0.24*s,1.34*s,0);
-      const armGeo = new THREE.BoxGeometry(0.15*s,0.5*s,0.15*s);
-      const armL = new THREE.Mesh(armGeo, mat); armL.position.set(-0.35*s,0.85*s,0);
-      const armR = new THREE.Mesh(armGeo, mat); armR.position.set(0.35*s,0.85*s,0);
-      parts.push(legs,torso,head,earL,earR,armL,armR);
+    case 'goblin':
+      ctx.fillStyle = hex;
+      rrect(cx-11, 42, 22, 26, 4);
+      blob(cx, 30, 13, 13);
+      tri(cx-13,25, cx-22,14, cx-8,21);
+      tri(cx+13,25, cx+22,14, cx+8,21);
+      ctx.fillStyle = dark;
+      ctx.beginPath(); ctx.arc(cx-5,29,1.7,0,Math.PI*2); ctx.arc(cx+5,29,1.7,0,Math.PI*2); ctx.fill();
       break;
-    }
-    case 'skeleton': {
-      const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.4*s,0.18*s,0.22*s), mat);
-      pelvis.position.y = 0.5*s;
-      const legGeo = new THREE.CylinderGeometry(0.05*s,0.05*s,0.5*s,6);
-      const legL = new THREE.Mesh(legGeo, mat); legL.position.set(-0.12*s,0.25*s,0);
-      const legR = new THREE.Mesh(legGeo, mat); legR.position.set(0.12*s,0.25*s,0);
-      const ribGeo = new THREE.BoxGeometry(0.42*s,0.06*s,0.24*s);
-      const rib1 = new THREE.Mesh(ribGeo, mat); rib1.position.y = 0.65*s;
-      const rib2 = new THREE.Mesh(ribGeo, mat); rib2.position.y = 0.78*s;
-      const rib3 = new THREE.Mesh(ribGeo, mat); rib3.position.y = 0.91*s;
-      const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.04*s,0.04*s,0.5*s,6), mat);
-      spine.position.y = 0.75*s;
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.22*s,8,8), mat);
-      head.position.y = 1.15*s;
-      const armGeo = new THREE.CylinderGeometry(0.04*s,0.04*s,0.45*s,6);
-      const armL = new THREE.Mesh(armGeo, mat); armL.position.set(-0.28*s,0.75*s,0);
-      const armR = new THREE.Mesh(armGeo, mat); armR.position.set(0.28*s,0.75*s,0);
-      parts.push(pelvis,legL,legR,rib1,rib2,rib3,spine,head,armL,armR);
+    case 'skeleton':
+      ctx.fillStyle = hex;
+      rrect(cx-9, 40, 18, 24, 3);
+      ctx.fillStyle = dark;
+      for (let i=0;i<3;i++) ctx.fillRect(cx-9, 45+i*6, 18, 3);
+      ctx.fillStyle = hex;
+      blob(cx, 28, 11, 11);
+      ctx.fillStyle = dark;
+      ctx.beginPath(); ctx.arc(cx-4,27,1.6,0,Math.PI*2); ctx.arc(cx+4,27,1.6,0,Math.PI*2); ctx.fill();
       break;
-    }
-    case 'orc': {
-      const legs = new THREE.Mesh(new THREE.BoxGeometry(0.6*s,0.5*s,0.45*s), mat);
-      legs.position.y = 0.3*s;
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.78*s,0.75*s,0.45*s), mat);
-      torso.position.y = 0.95*s;
-      const shoulderGeo = new THREE.BoxGeometry(0.28*s,0.22*s,0.5*s);
-      const shL = new THREE.Mesh(shoulderGeo, accent); shL.position.set(-0.48*s,1.28*s,0);
-      const shR = new THREE.Mesh(shoulderGeo, accent); shR.position.set(0.48*s,1.28*s,0);
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.3*s,10,10), mat);
-      head.position.y = 1.55*s;
-      const tuskGeo = new THREE.ConeGeometry(0.05*s,0.2*s,6);
-      const tuskL = new THREE.Mesh(tuskGeo, accent); tuskL.rotation.x=Math.PI; tuskL.position.set(-0.1*s,1.42*s,0.28*s);
-      const tuskR = new THREE.Mesh(tuskGeo, accent); tuskR.rotation.x=Math.PI; tuskR.position.set(0.1*s,1.42*s,0.28*s);
-      parts.push(legs,torso,shL,shR,head,tuskL,tuskR);
+    case 'orc':
+      rrect(cx-17, 38, 34, 30, 5);
+      blob(cx, 24, 15, 14);
+      tri(cx-7,32, cx-10,41, cx-2,34);
+      tri(cx+7,32, cx+10,41, cx+2,34);
+      ctx.fillStyle = dark;
+      rrect(cx-23,36,11,9,3); rrect(cx+12,36,11,9,3);
       break;
-    }
-    case 'wraith': {
-      const cloak = new THREE.Mesh(new THREE.CylinderGeometry(0.1*s,0.55*s,1.3*s,10,1,true), new THREE.MeshStandardMaterial({color:m.color, transparent:true, opacity:0.75, side:THREE.DoubleSide}));
-      cloak.position.y = 0.75*s;
-      const hood = new THREE.Mesh(new THREE.SphereGeometry(0.28*s,10,10), mat);
-      hood.position.y = 1.35*s;
-      const eyeGeo = new THREE.SphereGeometry(0.04*s,6,6);
-      const eyeMat = new THREE.MeshBasicMaterial({color:0xffffff});
-      const eyeL = new THREE.Mesh(eyeGeo, eyeMat); eyeL.position.set(-0.09*s,1.36*s,0.22*s);
-      const eyeR = new THREE.Mesh(eyeGeo, eyeMat); eyeR.position.set(0.09*s,1.36*s,0.22*s);
-      parts.push(cloak,hood,eyeL,eyeR);
+    case 'wraith':
+      ctx.globalAlpha = 0.82;
+      ctx.beginPath();
+      ctx.moveTo(cx, 18);
+      ctx.quadraticCurveTo(cx+23,42, cx+17,72);
+      ctx.lineTo(cx-17,72);
+      ctx.quadraticCurveTo(cx-23,42, cx, 18);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.globalAlpha = 1;
+      blob(cx, 22, 12, 12);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(cx-4,22,1.8,0,Math.PI*2); ctx.arc(cx+4,22,1.8,0,Math.PI*2); ctx.fill();
       break;
-    }
-    case 'warden': {
-      const legs = new THREE.Mesh(new THREE.BoxGeometry(0.8*s,0.6*s,0.6*s), mat);
-      legs.position.y = 0.35*s;
-      const torso = new THREE.Mesh(new THREE.BoxGeometry(1.0*s,1.0*s,0.6*s), mat);
-      torso.position.y = 1.2*s;
-      const shoulderGeo = new THREE.ConeGeometry(0.3*s,0.4*s,6);
-      const shL = new THREE.Mesh(shoulderGeo, accent); shL.position.set(-0.62*s,1.75*s,0); shL.rotation.z = -0.3;
-      const shR = new THREE.Mesh(shoulderGeo, accent); shR.position.set(0.62*s,1.75*s,0); shR.rotation.z = 0.3;
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.35*s,10,10), mat);
-      head.position.y = 2.05*s;
-      const hornGeo = new THREE.ConeGeometry(0.06*s,0.35*s,6);
-      const hornL = new THREE.Mesh(hornGeo, accent); hornL.position.set(-0.15*s,2.35*s,0); hornL.rotation.z = -0.3;
-      const hornR = new THREE.Mesh(hornGeo, accent); hornR.position.set(0.15*s,2.35*s,0); hornR.rotation.z = 0.3;
-      parts.push(legs,torso,shL,shR,head,hornL,hornR);
+    case 'warden':
+      rrect(cx-20, 36, 40, 32, 6);
+      blob(cx, 22, 15, 14);
+      tri(cx-8,12, cx-12,2, cx-3,8);
+      tri(cx+8,12, cx+12,2, cx+3,8);
+      ctx.fillStyle = dark;
+      rrect(cx-28,34,14,10,3); rrect(cx+14,34,14,10,3);
       break;
-    }
-    default: {
-      const body = new THREE.Mesh(new THREE.BoxGeometry(0.8*s,1.2*s,0.5*s), mat);
-      body.position.y = 0.6*s;
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.32*s,10,10), mat);
-      head.position.y = 1.35*s;
-      parts.push(body,head);
-    }
+    default:
+      rrect(cx-10, 40, 20, 24, 4);
+      blob(cx, 30, 11, 11);
   }
-  parts.forEach(p=>group.add(p));
-  group.position.set(m.x, 0, m.z);
-  group.userData.mat = mat;
-  group.userData.uid = m.uid;
-  return group;
+  const tex = new THREE.CanvasTexture(c);
+  tex.magFilter = THREE.NearestFilter;
+  MONSTER_SPRITE_CACHE[typeId] = tex;
+  return tex;
+}
+function makeMonsterMesh(m){
+  const tex = makeMonsterSpriteTexture(m.typeId, m.color);
+  const mat = new THREE.SpriteMaterial({map:tex, transparent:true});
+  const sprite = new THREE.Sprite(mat);
+  const height = m.spriteH||1.5;
+  const width = height * (64/80);
+  sprite.scale.set(width, height, 1);
+  sprite.position.set(m.x, height/2, m.z);
+  sprite.userData.mat = mat;
+  sprite.userData.baseScale = {x:width, y:height};
+  sprite.userData.uid = m.uid;
+  return sprite;
 }
